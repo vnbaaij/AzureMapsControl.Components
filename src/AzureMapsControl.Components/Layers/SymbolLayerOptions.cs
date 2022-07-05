@@ -12,6 +12,7 @@
     /// Options used when rendering geometries in a SymbolLayer.
     /// </summary>
     [ExcludeFromCodeCoverage]
+    [JsonConverter(typeof(SymbolLayerOptionsJsonConverter))]
     public sealed class SymbolLayerOptions : SourceLayerOptions
     {
         /// <summary>
@@ -35,58 +36,81 @@
         public SymbolLayerPlacement Placement { get; set; }
     }
 
-    /// <summary>
-    /// Specifies the label placement relative to its geometry.
-    /// </summary>
-    [JsonConverter(typeof(SymbolLayerPlacementJsonConverter))]
-    public struct SymbolLayerPlacement
+    internal sealed class SymbolLayerOptionsJsonConverter : SourceLayerOptionsJsonConverter<SymbolLayerOptions>
     {
-        private readonly string _type;
-
-        /// <summary>
-        /// The label is placed along the line of the geometry.
-        /// Can only be used on LineString and Polygon geometries.
-        /// </summary>
-        public static readonly SymbolLayerPlacement Line = new SymbolLayerPlacement("line");
-
-        /// <summary>
-        /// The label is placed at the center of the line of the geometry.
-        /// Can only be used on `LineString` and `Polygon` geometries
-        /// </summary>
-        public static readonly SymbolLayerPlacement LineCenter = new SymbolLayerPlacement("line-center");
-
-        /// <summary>
-        /// The label is placed at the point where the geometry is located.
-        /// </summary>
-        public static readonly SymbolLayerPlacement Point = new SymbolLayerPlacement("point");
-
-        private SymbolLayerPlacement(string type) => _type = type;
-
-        public override string ToString() => _type;
-
-        internal static SymbolLayerPlacement FromString(string type)
+        public override SymbolLayerOptions Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            switch (type)
+            var depth = reader.CurrentDepth;
+            var result = new SymbolLayerOptions();
+            while (reader.TokenType != JsonTokenType.EndObject || depth != reader.CurrentDepth)
             {
-                case "line":
-                    return Line;
+                reader.Read();
+                if (reader.TokenType == JsonTokenType.PropertyName)
+                {
+                    var propertyName = reader.GetString();
+                    if (IsSourceLayerOptionsProperty(propertyName))
+                    {
+                        ReadSourceLayerOptionsProperty(propertyName, reader, result);
+                    }
+                    else
+                    {
+                        reader.Read();
+                        switch (propertyName)
+                        {
+                            case "iconOptions":
+                                result.IconOptions = reader.TokenType == JsonTokenType.Null ? null : JsonSerializer.Deserialize<IconOptions>(ref reader, options);
+                                break;
 
-                case "line-center":
-                    return LineCenter;
+                            case "textOptions":
+                                result.TextOptions = reader.TokenType == JsonTokenType.Null ? null : JsonSerializer.Deserialize<TextOptions>(ref reader, options);
+                                break;
 
-                case "point":
-                    return Point;
-
-                default:
-                    return default;
+                            case "placement":
+                                result.Placement = reader.TokenType == JsonTokenType.Null ? default : SymbolLayerPlacement.FromString(reader.GetString());
+                                break;
+                        }
+                    }
+                }
             }
+            return result;
         }
-    }
 
-    internal class SymbolLayerPlacementJsonConverter : JsonConverter<SymbolLayerPlacement>
-    {
-        public override SymbolLayerPlacement Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => SymbolLayerPlacement.FromString(reader.GetString());
+        public override void Write(Utf8JsonWriter writer, SymbolLayerOptions value, JsonSerializerOptions options)
+        {
+            if (value is null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
 
-        public override void Write(Utf8JsonWriter writer, SymbolLayerPlacement value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
+            writer.WriteStartObject();
+
+            WriteSourceLayerOptionsProperties(writer, value, options);
+
+            if (value.IconOptions is not null)
+            {
+                writer.WritePropertyName("iconOptions");
+                JsonSerializer.Serialize(writer, value.IconOptions);
+            }
+
+            if (value.LineSpacing is not null)
+            {
+                writer.WritePropertyName("lineSpacing");
+                JsonSerializer.Serialize(writer, value.LineSpacing);
+            }
+
+            if (value.Placement.ToString() != default(SymbolLayerPlacement).ToString())
+            {
+                writer.WriteString("placement", value.Placement.ToString());
+            }
+
+            if (value.TextOptions is not null)
+            {
+                writer.WritePropertyName("textOptions");
+                JsonSerializer.Serialize(writer, value.TextOptions);
+            }
+
+            writer.WriteEndObject();
+        }
     }
 }

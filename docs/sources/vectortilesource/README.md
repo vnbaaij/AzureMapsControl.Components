@@ -1,5 +1,7 @@
 A vector tile source loads data formatted as vector tiles for the current map view, based on the maps tiling system. Ideal for large to massive data sets (millions or billions of shapes).
 
+![Vector Tile source](../../assets/vectortilesource.png) 
+
 ```
 @page "/VectorTileSource"
 

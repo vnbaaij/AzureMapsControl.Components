@@ -3,6 +3,7 @@
     using System.Text.Json;
 
     using AzureMapsControl.Components.Data;
+    using AzureMapsControl.Components.Data.Grid;
     using AzureMapsControl.Components.Tests.Json;
 
     using Xunit;
@@ -24,7 +25,7 @@
                 Tolerance = 6
             };
 
-            var expectedJson = JsonSerializer.Serialize(options, null);
+            var expectedJson = JsonSerializer.Serialize(options);
             TestAndAssertWrite(options, expectedJson);
         }
 
@@ -43,7 +44,18 @@
                 Url = "url"
             };
 
-            var expectedJson = JsonSerializer.Serialize(options, null);
+            var expectedJson = JsonSerializer.Serialize(options);
+            TestAndAssertWrite(options, expectedJson);
+        }
+
+        [Fact]
+        public void Should_SerializeGriddedDataSourceOptions()
+        {
+            var options = new GriddedDataSourceOptions {
+                CellWidth = 1
+            };
+
+            var expectedJson = JsonSerializer.Serialize(options);
             TestAndAssertWrite(options, expectedJson);
         }
     }

@@ -1,6 +1,5 @@
 ﻿namespace AzureMapsControl.Components.Constants
 {
-    using System.Data;
     using System.Diagnostics.CodeAnalysis;
 
     [ExcludeFromCodeCoverage]
@@ -13,12 +12,15 @@
             internal const string Core = "Core";
             internal const string Drawing = "Drawing";
             internal const string Popup = "Popup";
-            internal const string Source = "Datasource";
+            internal const string Source = "Source";
+            internal const string Datasource = "Datasource";
+            internal const string GriddedDatasource = "GriddedDatasource";
             internal const string HtmlMarker = "HtmlMarker";
             internal const string OverviewMapControl = "OverviewMapControl";
             internal const string GeolocationControl = "GeolocationControl";
             internal const string FullScreenControl = "FullscreenControl";
             internal const string Indoor = "Indoor";
+            internal const string Layer = "Layer";
         }
 
         internal static class Methods
@@ -102,8 +104,24 @@
                 internal const string Remove = "remove";
                 internal const string Dispose = "dispose";
                 internal const string GetOptions = "getOptions";
-                internal const string GetShapes = "getShapes";
                 internal const string AddFeatureCollection = "addFeatureCollection";
+                internal const string SetOptions = "setOptions";
+            }
+
+            internal static class Datasource
+            {
+                internal const string GetShapes = "getShapes";
+            }
+
+            internal static class GriddedDatasource
+            {
+                internal const string GetCellChildren = "getCellChildren";
+                internal const string GetGridCells = "getGridCells";
+                internal const string GetPoints = "getPoints";
+                internal const string SetFeatureCollectionPoints = "setFeatureCollectionPoints";
+                internal const string SetFeaturePoints = "setFeaturePoints";
+                internal const string SetPoints = "setPoints";
+                internal const string SetShapePoints = "setShapePoints";
             }
 
             internal static class HtmlMarker
@@ -144,6 +162,11 @@
                 internal const string GetStyleDefinition = "getStyleDefinition";
                 internal const string SetDynamicStyling = "setDynamicStyling";
                 internal const string SetFacility = "setFacility";
+                internal const string SetOptions = "setOptions";
+            }
+
+            internal static class Layer
+            {
                 internal const string SetOptions = "setOptions";
             }
         }

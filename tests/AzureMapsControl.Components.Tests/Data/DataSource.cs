@@ -834,7 +834,7 @@
             var result = await dataSource.GetShapesAsync();
             Assert.Equal(shapes, result);
 
-            _jsRuntimeMock.Verify(runtime => runtime.InvokeAsync<IEnumerable<Shape<Geometry>>>(Constants.JsConstants.Methods.Source.GetShapes.ToSourceNamespace(), dataSource.Id), Times.Once);
+            _jsRuntimeMock.Verify(runtime => runtime.InvokeAsync<IEnumerable<Shape<Geometry>>>(Constants.JsConstants.Methods.Datasource.GetShapes.ToDatasourceNamespace(), dataSource.Id), Times.Once);
             _jsRuntimeMock.VerifyNoOtherCalls();
         }
 
@@ -997,6 +997,62 @@
             var jsonDocument = JsonDocument.Parse("{}");
             await Assert.ThrowsAnyAsync<ComponentDisposedException>(async () => await dataSource.AddAsync(jsonDocument));
             _jsRuntimeMock.Verify(runtime => runtime.InvokeVoidAsync(Constants.JsConstants.Methods.Source.Dispose.ToSourceNamespace(), dataSource.Id), Times.Once);
+            _jsRuntimeMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async void Should_SetOptionsAsync()
+        {
+            var datasource = new DataSource {
+                JSRuntime = _jsRuntimeMock.Object,
+                Options = new DataSourceOptions {
+                    Buffer = 1
+                }
+            };
+
+            await datasource.SetOptionsAsync(options => options.ClusterMaxZoom = 2);
+            Assert.Equal(1, datasource.Options.Buffer);
+            Assert.Equal(2, datasource.Options.ClusterMaxZoom);
+
+            _jsRuntimeMock.Verify(runtime => runtime.InvokeVoidAsync(Constants.JsConstants.Methods.Source.SetOptions.ToSourceNamespace(), datasource.Id, datasource.Options), Times.Once);
+            _jsRuntimeMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async void Should_SetOptions_NoInitialValueAsync()
+        {
+            var datasource = new DataSource {
+                JSRuntime = _jsRuntimeMock.Object
+            };
+
+            await datasource.SetOptionsAsync(options => options.ClusterMaxZoom = 2);
+            Assert.Equal(2, datasource.Options.ClusterMaxZoom);
+
+            _jsRuntimeMock.Verify(runtime => runtime.InvokeVoidAsync(Constants.JsConstants.Methods.Source.SetOptions.ToSourceNamespace(), datasource.Id, datasource.Options), Times.Once);
+            _jsRuntimeMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async void Should_NotSetOptions_NotAddedToMapCase_Async()
+        {
+            var datasource = new DataSource();
+
+            await Assert.ThrowsAnyAsync<ComponentNotAddedToMapException>(async () => await datasource.SetOptionsAsync(options => options.ClusterMaxZoom = 2));
+
+            _jsRuntimeMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async void Should_NotSetOptions_DisposedCase_Async()
+        {
+            var datasource = new DataSource {
+                JSRuntime = _jsRuntimeMock.Object
+            };
+            await datasource.DisposeAsync();
+
+            await Assert.ThrowsAnyAsync<ComponentDisposedException>(async () => await datasource.SetOptionsAsync(options => options.ClusterMaxZoom = 2));
+
+            _jsRuntimeMock.Verify(runtime => runtime.InvokeVoidAsync(Constants.JsConstants.Methods.Source.Dispose.ToSourceNamespace(), datasource.Id), Times.Once);
             _jsRuntimeMock.VerifyNoOtherCalls();
         }
     }

@@ -13,9 +13,10 @@ import { MapImageTemplate } from './map-image-template';
 import { HtmlMarkerEventArgs, toMarkerEvent } from '../html-markers/html-marker-event-args';
 import { HtmlMarkerDefinition } from '../html-markers/html-marker-options';
 import { MapEventArgs } from '../map/map-event-args';
-import { mapDataEvents, mapEvents, mapLayerEvents, mapMouseEvents, mapStringEvents, mapTouchEvents } from '../map/map-events';
+import { mapDataEvents, mapEvents, mapLayerEvents, mapMouseEvents, mapSourceEvents, mapStringEvents, mapTouchEvents } from '../map/map-events';
 import { Feature, Shape } from '../geometries/geometry';
 import { DataSourceEventArgs } from '../sources/datasource-event-args';
+import * as griddeddatasource from 'azure-maps-gridded-data-source';
 
 export class Core {
     private static readonly _popups: Map<string, azmaps.Popup> = new Map<string, azmaps.Popup>();
@@ -160,7 +161,7 @@ export class Core {
                         position: e.position,
                         positions: e.positions,
                         shapes: e.shapes?.filter(shape => shape instanceof azmaps.Shape).map(shape => this.getSerializableShape(shape as azmaps.Shape)),
-                        features: e.shapes?.filter(shape => shape instanceof azmaps.data.Feature || shape.type === 'Feature').map(feature => this._getSerializableFeature(feature as azmaps.data.Feature<azmaps.data.Geometry, unknown>))
+                        features: e.shapes?.filter(shape => shape instanceof azmaps.data.Feature || shape.type === 'Feature').map(feature => this.getSerializableFeature(feature as azmaps.data.Feature<azmaps.data.Geometry, unknown>))
                     });
                 });
             });
@@ -225,7 +226,7 @@ export class Core {
                         pixel: mouseEvent.pixel,
                         position: mouseEvent.position,
                         shapes: mouseEvent.shapes?.filter(shape => shape instanceof azmaps.Shape).map(shape => this.getSerializableShape(shape as azmaps.Shape)),
-                        features: mouseEvent.shapes?.filter(shape => shape instanceof azmaps.data.Feature).map(feature => this._getSerializableFeature(feature as azmaps.data.Feature<azmaps.data.Geometry, unknown>))
+                        features: mouseEvent.shapes?.filter(shape => shape instanceof azmaps.data.Feature).map(feature => this.getSerializableFeature(feature as azmaps.data.Feature<azmaps.data.Geometry, unknown>))
                     });
                 });
             });
@@ -254,6 +255,17 @@ export class Core {
                     eventHelper.invokeMethodAsync('NotifyEventAsync', {
                         type: value,
                         id: layer.getId()
+                    });
+                });
+            });
+
+            mapSourceEvents.filter(value => enabledEvents.includes(value)).forEach(value => {
+                map.events.add(value as any, (source: azmaps.source.Source) => {
+                    eventHelper.invokeMethodAsync('NotifyEventAsync', {
+                        type: value,
+                        source: {
+                            id: source.getId()
+                        }
                     });
                 });
             });
@@ -312,7 +324,7 @@ export class Core {
         this.addPopup(id, options, events, eventHelper);
     }
 
-    public static addSource(id: string, options: azmaps.DataSourceOptions | azmaps.VectorTileSourceOptions, type: SourceType, events: string[], eventHelper: EventHelper<DataSourceEventArgs>): void {
+    public static addSource(id: string, options: azmaps.DataSourceOptions | azmaps.VectorTileSourceOptions | griddeddatasource.GriddedDataSourceOptions, type: SourceType, events: string[], eventHelper: EventHelper<DataSourceEventArgs>): void {
         if (type === 'datasource') {
             const dataSource = new azmaps.source.DataSource(id, options);
             this._map.sources.add(dataSource);
@@ -331,6 +343,9 @@ export class Core {
             });
         } else if (type === 'vectortilesource') {
             this._map.sources.add(new azmaps.source.VectorTileSource(id, options));
+        } else if (type === 'griddeddatasource') {
+            const griddedDatasource = new griddeddatasource.source.GriddedDataSource(id, options);
+            this._map.sources.add(griddedDatasource);
         }
     }
 
@@ -504,18 +519,8 @@ export class Core {
         });
     }
 
-    public static getCamera(): azmaps.CameraOptions {
-        const camera = this._map.getCamera();
-        return <azmaps.CameraOptions>{
-            bearing: camera.bearing,
-            center: camera.center,
-            centerOffset: camera.centerOffset,
-            maxBounds: camera.maxBounds,
-            maxZoom: camera.maxZoom,
-            minZoom: camera.minZoom,
-            pitch: camera.pitch,
-            zoom: camera.zoom
-        };
+    public static getCamera(): azmaps.CameraOptions & azmaps.CameraBoundsOptions {
+        return this._map.getCamera();
     }
 
     public static getStyle(): azmaps.StyleOptions {
@@ -580,7 +585,7 @@ export class Core {
         return properties;
     }
 
-    private static _getSerializableFeature(feature: azmaps.data.Feature<azmaps.data.Geometry, any>): Feature {
+    public static getSerializableFeature(feature: azmaps.data.Feature<azmaps.data.Geometry, any>): Feature {
         return {
             bbox: feature.bbox,
             geometry: feature.geometry,

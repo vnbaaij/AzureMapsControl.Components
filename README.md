@@ -2,6 +2,8 @@
 
 This library allows you to use `Azure Maps` inside your razor application.
 
+![Custom Azure Map](./docs/assets/map.png) 
+
 ## Install the Nuget Package
 
 This library is available on [Nuget](https://www.nuget.org/packages/AzureMapsControl.Components/) as `AzureMapsControl.Components`.
@@ -142,6 +144,11 @@ It also needs to fetch the token to send to the requests of the atlas library. F
 - [Expressions](docs/expressions)
 - [Animations](docs/animations)
 - [Indoor Module](docs/indoor)
+
+## Community links
+
+- [Creating Azure Maps Applications In Blazor](https://blazorhelpwebsite.com/ViewBlogPost/59)
+- [Blazor Store Finder](https://github.com/ADefWebserver/BlazorStoreFinder)
 
 ## Want to contribute ?
 
